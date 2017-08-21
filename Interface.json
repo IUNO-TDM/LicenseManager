@@ -1,0 +1,144 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Manage CMDongles and licenses",
+    "version": "1.0.0"
+  },
+  "host": "localhost:11432",
+  "schemes": [
+    "http"
+  ],
+  "basePath": "/v1",
+  "consumes": [
+    "application/json",
+    "text/plain"
+  ],
+  "produces": [
+    "application/json",
+    "text/plain"
+  ],
+  "paths": {
+    "/cmdongles": {
+      "get": {
+        "summary": "Returns a list of connected cmdongle ids",
+        "operationId": "getCmDongles",
+        "responses": {
+          "200": {
+            "description": "Here comes the list",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/cmdongles/{cmDongleId}/context": {
+      "get": {
+        "summary": "Returns the RAC file in base64 format",
+        "operationId": "getRemoteAccessContext",
+        "parameters": [
+          {
+            "name": "cmDongleId",
+            "description": "the cmdongle ID",
+            "in": "path",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "success",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "404": {
+            "description": "no cmdongle with this id",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/cmdongles/{cmDongleId}/update": {
+      "post": {
+        "summary": "Apply a RAU File in base64 format",
+        "operationId": "applyRemoteAccessUpdate",
+        "parameters": [
+          {
+            "name": "cmDongleId",
+            "description": "the cmdongle ID",
+            "in": "path",
+            "type": "string",
+            "required": true
+          },
+          {
+            "name": "body",
+            "description": "the rau file in base64 format",
+            "in": "body",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "success"
+          },
+          "400": {
+            "description": "rau file does not match cmdongle id",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "404": {
+            "description": "no cmdongle with this id",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        }
+      }
+    },
+    "/products/{productId}/license": {
+      "get": {
+        "summary": "Get the amount of of licenses for the given productcode",
+        "operationId": "getLicenses",
+        "parameters": [
+          {
+            "name": "productId",
+            "description": "the cmdongle ID",
+            "in": "path",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the amount of licenses available",
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Error": {
+      "type": "object",
+      "properties": {
+        "message": {
+          "type": "string",
+          "description": "meaningful error message"
+        }
+      }
+    }
+  }
+}
