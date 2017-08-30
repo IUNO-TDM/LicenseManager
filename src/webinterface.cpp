@@ -108,41 +108,46 @@ void WebInterface::HandleHttpMessage(const string& method, const string& path, c
 void WebInterface::HandleGetDongles(HttpResponse& response){
     LOG(DEBUG)<< "Getting dongles.";
     vector<string> dongles;
-    license_manager_->GetDongles(dongles);
-    string dongles_str("[");
-    for (auto i : dongles) {
-        if(dongles_str != "["){
-            dongles_str += ",";
+    try{
+        license_manager_->GetDongles(dongles);
+        string dongles_str("[");
+        for (auto i : dongles) {
+            if(dongles_str != "["){
+                dongles_str += ",";
+            }
+            dongles_str += "\"" + i + "\"";
         }
-        dongles_str += "\"" + i + "\"";
+        dongles_str+="]\n";
+        response.Set(200, dongles_str);
+        LOG(DEBUG)<< "Dongles successfully got.";
+    }catch(exception& ex){
+        response.Set(400, ex.what());
+        LOG(DEBUG) << "Getting dongles failed.";
     }
-    dongles_str+="]\n";
-    response.Set(200, dongles_str);
-    LOG(DEBUG)<< "Dongles successfully got.";
 }
 
 void WebInterface::HandleGetContext(const string& dongle_id, HttpResponse& response){
-    LOG(DEBUG)<< "Getting context for dongle '" << dongle_id << "'.";
+    LOG(DEBUG) << "Getting context for dongle '" << dongle_id << "'.";
     try{
         string context;
         license_manager_->GetContext(dongle_id, context);
         response.Set(200, context);
-        LOG(DEBUG)<< "Context successfully got.";
-    }catch(out_of_range&){
-        LOG(DEBUG)<< "No dongle with id '" << dongle_id << "' found.";
-        response.Set(400, "No dongle found with the given id.");
+        LOG(DEBUG) << "Context successfully got.";
+    }catch(exception& ex){
+        response.Set(400, ex.what());
+        LOG(DEBUG) << "Getting context failed.";
     }
 }
 
 void WebInterface::HandleUpdate(const string& dongle_id, const string& rau_data, HttpResponse& response){
-    LOG(DEBUG)<< "Updating dongle '" << dongle_id << "'.";
+    LOG(DEBUG) << "Updating dongle '" << dongle_id << "'.";
     try{
         license_manager_->Update(dongle_id, rau_data);
         response.Set(200, "SUCCESS");
-        LOG(DEBUG)<< "Dongle successfully updated.";
-    }catch(out_of_range&){
-        LOG(DEBUG)<< "No dongle with id '" << dongle_id << "' found.";
-        response.Set(400, "No dongle found with the given id.");
+        LOG(DEBUG) << "Dongle successfully updated.";
+    }catch(exception& ex){
+        response.Set(400, ex.what());
+        LOG(DEBUG) << "Updating dongle failed.";
     }
 }
 
@@ -154,9 +159,9 @@ void WebInterface::HandleGetLicenseCount(const string& dongle_id, const string& 
         ss << count;
         response.Set(200, ss.str());
         LOG(DEBUG)<< "License count successfully got.";
-    }catch(out_of_range&){
-        LOG(DEBUG)<< "No dongle with id '" << dongle_id << "' found.";
-        response.Set(400, "No dongle found with the given id.");
+    }catch(exception& ex){
+        response.Set(400, ex.what());
+        LOG(DEBUG) << "Getting license count failed.";
     }
 }
 
