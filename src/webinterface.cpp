@@ -71,7 +71,7 @@ void WebInterface::OnHttp(connection_hdl hdl) {
     con->set_body(response.response_message_);
     con->set_status((websocketpp::http::status_code::value)response.response_code_);
     if(response.content_type_ != ""){
-        con->append_header("content-type", response.content_type_);
+        con->append_header("Content-Type", response.content_type_);
     }
 }
 
