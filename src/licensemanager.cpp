@@ -28,7 +28,7 @@ void LicenseManager::GetDongles(vector<string>& dongles){
             if(dongles_log != ""){
                 dongles_log+=",";
             }
-            dongles_log += dongles_log;
+            dongles_log += ss.str();
         }
 
         LOG(DEBUG)<< "Dongles successfully got: [" << dongles_log << "].";

@@ -11,7 +11,10 @@ void CryptoHelpers::Unbase64(const string& in, CryptoBuffer& out){
     unsigned char* buffer = new unsigned char[in.length()+1];
     memset(buffer, 0, in.length()+1);
     BIO* b64 = BIO_new(BIO_f_base64());
-    BIO* bmem = BIO_new_mem_buf(in.c_str(), in.length());
+    // unfortunately some versions of openssl erroneously lack const at the first arg of the following call, so work around...
+    CryptoBuffer workaround;
+    workaround.set(in);
+    BIO* bmem = BIO_new_mem_buf(workaround, workaround.size());
     bmem = BIO_push(b64, bmem);
 
     BIO_set_flags(bmem, BIO_FLAGS_BASE64_NO_NL);

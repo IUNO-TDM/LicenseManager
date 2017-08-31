@@ -68,8 +68,11 @@ void WebInterface::OnHttp(connection_hdl hdl) {
     HttpResponse response;
     HandleHttpMessage(met,uri,body, response);
 
-    con->set_body(response.response_message);
-    con->set_status((websocketpp::http::status_code::value)response.response_code);
+    con->set_body(response.response_message_);
+    con->set_status((websocketpp::http::status_code::value)response.response_code_);
+    if(response.content_type_ != ""){
+        con->append_header("content-type", response.content_type_);
+    }
 }
 
 void WebInterface::HandleHttpMessage(const string& method, const string& path, const string& body, HttpResponse& response) {
@@ -98,10 +101,10 @@ void WebInterface::HandleHttpMessage(const string& method, const string& path, c
         response.Set(400, "Path could not be recognized");
     }
 
-    if(response.response_code == 200){
+    if(response.response_code_ == 200){
         LOG(DEBUG) << "HTTP Message successfully handled.";
     } else {
-        LOG(DEBUG) << "HTTP Message failed, code: " << response.response_code << "; message: '" << response.response_message << "'.";
+        LOG(DEBUG) << "HTTP Message failed, code: " << response.response_code_ << "; message: '" << response.response_message_ << "'.";
     }
 }
 
@@ -119,6 +122,7 @@ void WebInterface::HandleGetDongles(HttpResponse& response){
         }
         dongles_str+="]\n";
         response.Set(200, dongles_str);
+        response.SetContentType("application/json");
         LOG(DEBUG)<< "Dongles successfully got.";
     }catch(exception& ex){
         response.Set(400, ex.what());

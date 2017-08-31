@@ -20,15 +20,19 @@ class WebInterface{
     private:
 
         struct HttpResponse {
-                int response_code;
-                std::string response_message;
+                int response_code_;
+                std::string response_message_;
+                std::string content_type_;
                 void Set(int code, const char* msg){
-                    response_code=code;
-                    response_message = msg;
+                    response_code_=code;
+                    response_message_ = msg;
                 }
                 void Set(int code, const std::string& msg){
-                    response_code=code;
-                    response_message = msg;
+                    response_code_ = code;
+                    response_message_ = msg;
+                }
+                void SetContentType(const char* content_type){
+                    content_type_ = content_type;
                 }
         };
 
