@@ -23,6 +23,7 @@ int main(int argc, char* argv[]) {
     sigset_t mask;
     sigfillset(&mask);
     sigdelset(&mask, SIGTERM);
+    sigdelset(&mask, SIGTSTP);
     sigprocmask(SIG_SETMASK, &mask, NULL);
 
     struct sigaction sa;
