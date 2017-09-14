@@ -31,7 +31,7 @@ endif
 DOWNLOAD_FILES := $(shell find $(LIB_DIR) -name *.download)
 DOWNLOADED_FILES := $(DOWNLOAD_FILES:%.download=%.downloaded)
 
-CPPFLAGS ?= $(INC_FLAGS) -MMD -MP -std=c++11 -Wall -g
+CPPFLAGS ?= $(INC_FLAGS) -MMD -MP -std=c++11 -Wall -g -DELPP_THREAD_SAFE
 
 %.downloaded: %.download
 	$(MKDIR_P) $(dir $<)/downloaded/$(basename $(notdir $<))/src
