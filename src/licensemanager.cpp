@@ -59,7 +59,7 @@ void LicenseManager::GetContext(const string& dongle_id, string& context){
         CMLTREQUEST cmLtRequest;
         memset(&cmLtRequest, 0, sizeof(cmLtRequest));
         cmLtRequest.mulFirmCode = 6000274;
-        const size_t buffer_size = 32*1024;
+        const size_t buffer_size = 256*1024;
         unsigned char buffer[buffer_size];
         memset(buffer, 0, buffer_size);
         int res = CmLtCreateContext(hcmse, CM_LT_FSB, &cmLtRequest, NULL, 0, buffer, buffer_size);
