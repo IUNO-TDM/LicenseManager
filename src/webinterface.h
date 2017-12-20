@@ -47,6 +47,7 @@ class WebInterface{
         void HandleGetContext(const std::string& dongle_id, HttpResponse& response);
         void HandleUpdate(const std::string& dongle_id, const std::string& rau_data, HttpResponse& response);
         void HandleGetLicenseCount(const std::string& dongle_id, const std::string& product_id, HttpResponse& response);
+        void HandleGetLicenses(const std::string& dongle_id, HttpResponse& response);
 
         websocketpp::server<websocketpp::config::asio> server_;
         std::thread server_thread_;

@@ -89,6 +89,8 @@ void WebInterface::HandleHttpMessage(const string& method, const string& path, c
         HandleUpdate(what[1].str(), body, response);
     } else if (boost::regex_search(combined, what, boost::regex("^GET:\\/cmdongles\\/([^/]+)\\/products\\/([^/]+)\\/licensecount:$"))) {
         HandleGetLicenseCount(what[1].str(), what[2].str(), response);
+    } else if (boost::regex_search(combined, what, boost::regex("^GET:\\/cmdongles\\/([^/]+)\\/licenses:$"))) {
+        HandleGetLicenses(what[1].str(), response);
     } else if(boost::regex_search(combined, what, boost::regex("^.*:\\/cmdongles:.*$"))) {
         response.Set(400, "Wrong method for this URL");
     } else if (boost::regex_search(combined, what, boost::regex("^.*:\\/cmdongles\\/([^/]+)\\/context:.*$"))) {
@@ -96,6 +98,8 @@ void WebInterface::HandleHttpMessage(const string& method, const string& path, c
     } else if (boost::regex_search(combined, what, boost::regex("^.*:\\/cmdongles\\/([^/]+)\\/update:.*$"))) {
         response.Set(400, "Wrong method for this URL");
     } else if (boost::regex_search(combined, what, boost::regex("^.*:\\/cmdongles\\/([^/]+)\\/products\\/([^/]+)\\/licensecount:.*$"))) {
+        response.Set(400, "Wrong method for this URL");
+    } else if (boost::regex_search(combined, what, boost::regex("^.*:\\/cmdongles\\/([^/]+)\\/licenses:$"))) {
         response.Set(400, "Wrong method for this URL");
     } else {
         response.Set(400, "Path could not be recognized");
@@ -166,6 +170,27 @@ void WebInterface::HandleGetLicenseCount(const string& dongle_id, const string& 
     }catch(exception& ex){
         response.Set(400, ex.what());
         LOG(DEBUG) << "Getting license count failed.";
+    }
+}
+
+void WebInterface::HandleGetLicenses(const string& dongle_id, HttpResponse& response){
+    LOG(DEBUG)<< "Getting license count for dongle '" << dongle_id << "'.";
+    try{
+        map<unsigned long, unsigned long> licenses;
+		license_manager_->GetLicenses(dongle_id, licenses);
+	    stringstream r;
+	    r << "[";
+	    bool is_first = true;
+	    for (auto& i : licenses){
+	    	r << (is_first?"":", ") << "{\"product\":\"" << i.first << "\", \"count\":" << i.second << "}";
+	    	is_first=false;
+	    }
+	    r << "]";
+	    response.Set(200, r.str());
+		LOG(DEBUG)<< "Licenses successfully got.";
+    }catch(exception& ex){
+        response.Set(400, ex.what());
+        LOG(DEBUG) << "Getting licenses failed.";
     }
 }
 

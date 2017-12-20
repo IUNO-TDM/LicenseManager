@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <string>
+#include <map>
 
 class LicenseManagerInterface {
     public:
@@ -11,6 +12,7 @@ class LicenseManagerInterface {
         virtual void GetContext(const std::string& dongle_id, std::string& context) = 0;
         virtual void Update(const std::string& dongle_id, const std::string& rau_data) = 0;
         virtual size_t GetLicenseCount(const std::string& dongle_id, const std::string& product_id) = 0;
+        virtual void GetLicenses(const std::string& dongle_id, std::map<unsigned long, unsigned long>& licenses) = 0;
 };
 
 #endif
