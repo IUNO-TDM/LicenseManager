@@ -112,7 +112,7 @@
         "parameters": [
           {
             "name": "productId",
-            "description": "the cmdongle ID",
+            "description": "The product code",
             "in": "path",
             "type": "string",
             "required": true
