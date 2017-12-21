@@ -38,6 +38,7 @@ CPPFLAGS ?= $(INC_FLAGS) -MMD -MP -std=c++11 -Wall -g -DELPP_THREAD_SAFE
 	curl  -L $(shell cat $<) --output $(dir $<)/downloaded/$(basename $(notdir $<))/src/$(notdir $(shell cat $<))
 	touch $@
 
+all: $(BUILD_DIR)/$(TARGET_EXEC)
 
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
 	@echo SRC Dirs: $(SRC_DIRS)
@@ -53,7 +54,7 @@ $(BUILD_DIR)/%.cpp.o: %.cpp $(DOWNLOADED_FILES)
 	$(MKDIR_P) $(dir $@)
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c $< -o $@
 
-.PHONY: clean
+.PHONY: clean all
 
 clean:
 	$(RM) -r $(BUILD_DIR)

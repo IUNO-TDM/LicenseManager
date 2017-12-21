@@ -92,17 +92,17 @@ void WebInterface::HandleHttpMessage(const string& method, const string& path, c
     } else if (boost::regex_search(combined, what, boost::regex("^GET:\\/cmdongles\\/([^/]+)\\/licenses:$"))) {
         HandleGetLicenses(what[1].str(), response);
     } else if(boost::regex_search(combined, what, boost::regex("^.*:\\/cmdongles:.*$"))) {
-        response.Set(400, "Wrong method for this URL");
+        response.Set(405, "Wrong method for this URL");
     } else if (boost::regex_search(combined, what, boost::regex("^.*:\\/cmdongles\\/([^/]+)\\/context:.*$"))) {
-        response.Set(400, "Wrong method for this URL");
+        response.Set(405, "Wrong method for this URL");
     } else if (boost::regex_search(combined, what, boost::regex("^.*:\\/cmdongles\\/([^/]+)\\/update:.*$"))) {
-        response.Set(400, "Wrong method for this URL");
+        response.Set(405, "Wrong method for this URL");
     } else if (boost::regex_search(combined, what, boost::regex("^.*:\\/cmdongles\\/([^/]+)\\/products\\/([^/]+)\\/licensecount:.*$"))) {
-        response.Set(400, "Wrong method for this URL");
+        response.Set(405, "Wrong method for this URL");
     } else if (boost::regex_search(combined, what, boost::regex("^.*:\\/cmdongles\\/([^/]+)\\/licenses:$"))) {
-        response.Set(400, "Wrong method for this URL");
+        response.Set(405, "Wrong method for this URL");
     } else {
-        response.Set(400, "Path could not be recognized");
+        response.Set(404, "Path could not be recognized");
     }
 
     if(response.response_code_ == 200){
@@ -129,8 +129,8 @@ void WebInterface::HandleGetDongles(HttpResponse& response){
         response.SetContentType("application/json");
         LOG(DEBUG)<< "Dongles successfully got.";
     }catch(exception& ex){
-        response.Set(400, ex.what());
-        LOG(DEBUG) << "Getting dongles failed.";
+        response.Set(500, ex.what());
+        LOG(DEBUG) << "Getting dongles failed. Reason: '" << ex.what() << "'.";
     }
 }
 
@@ -141,9 +141,12 @@ void WebInterface::HandleGetContext(const string& dongle_id, HttpResponse& respo
         license_manager_->GetContext(dongle_id, context);
         response.Set(200, context);
         LOG(DEBUG) << "Context successfully got.";
+    }catch(invalid_argument& ex){
+        response.Set(404, ex.what());
+        LOG(DEBUG) << "Getting context failed. Reason: '" << ex.what() << "'.";
     }catch(exception& ex){
-        response.Set(400, ex.what());
-        LOG(DEBUG) << "Getting context failed.";
+        response.Set(500, ex.what());
+        LOG(DEBUG) << "Getting context failed. Reason: '" << ex.what() << "'.";
     }
 }
 
@@ -153,9 +156,15 @@ void WebInterface::HandleUpdate(const string& dongle_id, const string& rau_data,
         license_manager_->Update(dongle_id, rau_data);
         response.Set(200, "SUCCESS");
         LOG(DEBUG) << "Dongle successfully updated.";
+    }catch(invalid_argument& ex){
+        response.Set(404, ex.what());
+        LOG(DEBUG) << "Updating dongle failed. Reason: '" << ex.what() << "'.";
+    }catch(runtime_error& ex){
+		response.Set(422, ex.what());
+        LOG(DEBUG) << "Updating dongle failed. Reason: '" << ex.what() << "'.";
     }catch(exception& ex){
-        response.Set(400, ex.what());
-        LOG(DEBUG) << "Updating dongle failed.";
+		response.Set(500, ex.what());
+        LOG(DEBUG) << "Updating dongle failed. Reason: '" << ex.what() << "'.";
     }
 }
 
@@ -167,9 +176,12 @@ void WebInterface::HandleGetLicenseCount(const string& dongle_id, const string& 
         ss << count;
         response.Set(200, ss.str());
         LOG(DEBUG)<< "License count successfully got.";
+    }catch(invalid_argument& ex){
+        response.Set(404, ex.what());
+        LOG(DEBUG) << "Getting license count failed. Reason: '" << ex.what() << "'.";
     }catch(exception& ex){
-        response.Set(400, ex.what());
-        LOG(DEBUG) << "Getting license count failed.";
+        response.Set(500, ex.what());
+        LOG(DEBUG) << "Getting license count failed. Reason: '" << ex.what() << "'.";
     }
 }
 
@@ -188,9 +200,12 @@ void WebInterface::HandleGetLicenses(const string& dongle_id, HttpResponse& resp
 	    r << "]";
 	    response.Set(200, r.str());
 		LOG(DEBUG)<< "Licenses successfully got.";
+    }catch(invalid_argument& ex){
+        response.Set(404, ex.what());
+        LOG(DEBUG) << "Getting licenses failed. Reason: '" << ex.what() << "'.";
     }catch(exception& ex){
-        response.Set(400, ex.what());
-        LOG(DEBUG) << "Getting licenses failed.";
+        response.Set(500, ex.what());
+        LOG(DEBUG) << "Getting licenses failed. Reason: '" << ex.what() << "'.";
     }
 }
 

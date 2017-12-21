@@ -41,7 +41,7 @@ void LicenseManager::GetDongles(vector<string>& dongles){
         stringstream ss;
         ss << "Getting dongles failed. Reason: '" << GetLastErrorText() << "'.";
         LOG(ERROR) << ss.str();
-        throw runtime_error(ss.str());
+        throw invalid_argument(ss.str());
     }
 }
 
@@ -73,7 +73,7 @@ void LicenseManager::GetContext(const string& dongle_id, string& context){
                 stringstream ss;
                 ss << "Getting context for dongle '" << dongle_id << "' failed due to an insufficient buffer size.";
                 LOG(ERROR) << ss.str();
-                throw length_error(ss.str());
+                throw runtime_error(ss.str());
             }
         }else{
             stringstream ss;
@@ -131,23 +131,28 @@ void LicenseManager::GetLicenses(const string& dongle_id, map<unsigned long, uns
     CMACCESS2 access;
     memset(&access, 0, sizeof(access));
     access.mflCtrl |= CM_ACCESS_NOUSERLIMIT;
-    SplitDongleId(dongle_id, access.musBoxMask, access.mulSerialNumber);
+
+    bool query_specific_dongle = false;
+    if(dongle_id != "all"){
+        query_specific_dongle = true;
+        SplitDongleId(dongle_id, access.musBoxMask, access.mulSerialNumber);
+    }
 
     HCMSysEntry hcmse = CmAccess2(CM_ACCESS_LOCAL, &access);
     if(hcmse){
-    	CMBOXINFO box_info;
-    	memset(&box_info, 0, sizeof(box_info));
-    	box_info.musBoxMask = access.musBoxMask;
-    	box_info.mulSerialNumber = access.mulSerialNumber;
-        int res = CmGetBoxContents2(hcmse, CM_GBC_BOX | CM_GBC_FI, 6000274, &box_info, NULL, 0);
-    	unsigned box_entry_count = res;
-    	CMBOXENTRY2* box_entries = NULL;
+        CMBOXINFO box_info;
+        memset(&box_info, 0, sizeof(box_info));
+        box_info.musBoxMask = access.musBoxMask;
+        box_info.mulSerialNumber = access.mulSerialNumber;
+        int res = CmGetBoxContents2(hcmse, (query_specific_dongle?CM_GBC_BOX:0) | CM_GBC_FI, 6000274, &box_info, NULL, 0);
+        unsigned box_entry_count = res;
+        CMBOXENTRY2* box_entries = NULL;
         if(res>0){
-        	box_entries = new CMBOXENTRY2[box_entry_count];
-        	res = CmGetBoxContents2(hcmse, CM_GBC_BOX | CM_GBC_FI, 6000274, &box_info, box_entries, box_entry_count);
+            box_entries = new CMBOXENTRY2[box_entry_count];
+            res = CmGetBoxContents2(hcmse, (query_specific_dongle?CM_GBC_BOX:0) | CM_GBC_FI, 6000274, &box_info, box_entries, box_entry_count);
         }
         if(res>0){
-        	if(static_cast<unsigned>(res) != box_entry_count){
+            if(static_cast<unsigned>(res) != box_entry_count){
                 stringstream ss;
                 ss << log_prefix << " failed due to an internal error.";
                 LOG(ERROR) << ss.str();
@@ -156,21 +161,26 @@ void LicenseManager::GetLicenses(const string& dongle_id, map<unsigned long, uns
                 }
                 delete[] box_entries;
                 throw runtime_error(ss.str());
-        	}
-        	for(unsigned i = 0; i < box_entry_count; i++){
-				licenses[box_entries[i].mulProductCode] = box_entries[i].mulUnitCounter;
-        	}
+            }
+            for(unsigned i = 0; i < box_entry_count; i++){
+                unsigned long product_id = box_entries[i].mulProductCode;
+                if(licenses.count(product_id)>0){
+                    licenses[product_id] += box_entries[i].mulUnitCounter;
+                }else{
+                    licenses[product_id] = box_entries[i].mulUnitCounter;
+                }
+            }
         }else{
-        	if(CmGetLastErrorCode() != CMERROR_ENTRY_NOT_FOUND){
-				stringstream ss;
-		        ss << log_prefix << " failed. Reason: '" << GetLastErrorText() << "'.";
-				LOG(ERROR) << ss.str();
-		        if(!CmRelease(hcmse)){
-		            LOG(WARNING)<< "CmRelease failed.";
-		        }
-		        delete[] box_entries;
-				throw runtime_error(ss.str());
-        	}
+            if(CmGetLastErrorCode() != CMERROR_ENTRY_NOT_FOUND){
+                stringstream ss;
+                ss << log_prefix << " failed. Reason: '" << GetLastErrorText() << "'.";
+                LOG(ERROR) << ss.str();
+                if(!CmRelease(hcmse)){
+                    LOG(WARNING)<< "CmRelease failed.";
+                }
+                delete[] box_entries;
+                throw runtime_error(ss.str());
+            }
         }
         delete[] box_entries;
 
@@ -186,9 +196,9 @@ void LicenseManager::GetLicenses(const string& dongle_id, map<unsigned long, uns
 }
 
 void LicenseManager::GetLicenses(const string& dongle_id, map<unsigned long, unsigned long>& licenses){
-	stringstream ss;
-	ss << "Getting licenses for dongle '" << dongle_id << "'";
-	string log_prefix = ss.str();
+    stringstream ss;
+    ss << "Getting licenses for dongle '" << dongle_id << "'";
+    string log_prefix = ss.str();
 
     LOG(DEBUG)<< log_prefix << "'.";
 
@@ -199,9 +209,9 @@ void LicenseManager::GetLicenses(const string& dongle_id, map<unsigned long, uns
 
 
 size_t LicenseManager::GetLicenseCount(const string& dongle_id, const string& product_id){
-	stringstream ss;
-	ss << "Getting license count for dongle '" << dongle_id << "' and product id '" << product_id << "'";
-	string log_prefix = ss.str();
+    stringstream ss;
+    ss << "Getting license count for dongle '" << dongle_id << "' and product id '" << product_id << "'";
+    string log_prefix = ss.str();
 
     LOG(DEBUG)<< log_prefix << "'.";
 
@@ -209,10 +219,10 @@ size_t LicenseManager::GetLicenseCount(const string& dongle_id, const string& pr
     boost::smatch what;
     unsigned long long product_id_ull = 0;
     if(boost::regex_search(product_id, what, boost::regex("^([0-9]{1,10})$"))){
-		product_id_ull = strtoull(what[1].str().c_str(), NULL, 10);
-		if(product_id_ull <= 0xffffffff){
-			product_id_good = true;
-		}
+        product_id_ull = strtoull(what[1].str().c_str(), NULL, 10);
+        if(product_id_ull <= 0xffffffff){
+            product_id_good = true;
+        }
     }
     if(!product_id_good){
         stringstream ss;
@@ -227,11 +237,11 @@ size_t LicenseManager::GetLicenseCount(const string& dongle_id, const string& pr
     map<unsigned long, unsigned long> licenses;
     GetLicenses(dongle_id, licenses, log_prefix);
 
-    for(map<unsigned long, unsigned long>::iterator i = licenses.begin(); i != licenses.end(); i++){
-    	if(i->first==product_id_ul){
-    		license_count = i->second;
-    		break;
-    	}
+    for(auto& i :licenses){
+        if(i.first==product_id_ul){
+            license_count = i.second;
+            break;
+        }
     }
 
     LOG(DEBUG) << log_prefix << " succeeded with " << license_count << " licenses found.";

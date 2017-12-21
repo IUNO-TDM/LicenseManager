@@ -58,7 +58,7 @@
           "404": {
             "description": "no cmdongle with this id",
             "schema": {
-              "$ref": "#/definitions/Error"
+              "type": "string"
             }
           }
         }
@@ -90,29 +90,36 @@
           "200": {
             "description": "success"
           },
-          "400": {
-            "description": "rau file does not match cmdongle id",
-            "schema": {
-              "$ref": "#/definitions/Error"
-            }
-          },
           "404": {
             "description": "no cmdongle with this id",
             "schema": {
-              "$ref": "#/definitions/Error"
+              "type": "string"
+            }
+          },
+          "422": {
+            "description": "rau file does not match cmdongle id",
+            "schema": {
+              "type": "string"
             }
           }
         }
       }
     },
-    "/products/{productId}/license": {
+    "/cmdongles/{cmDongleId}/products/{productId}/licensecount": {
       "get": {
-        "summary": "Get the amount of of licenses for the given productcode",
-        "operationId": "getLicenses",
+        "summary": "Get the amount of of licenses for the given productcode within a specific dongle or, if cmDongleId is given as \"all\", for all dongles",
+        "operationId": "getLicenseCount",
         "parameters": [
           {
+            "name": "cmDongleId",
+            "description": "the cmdongle ID to query all dongles",
+            "in": "path",
+            "type": "string",
+            "required": true
+          },
+          {
             "name": "productId",
-            "description": "The product code",
+            "description": "the product ID",
             "in": "path",
             "type": "string",
             "required": true
@@ -125,18 +132,60 @@
               "type": "integer",
               "minimum": 0
             }
+          },
+          "404": {
+            "description": "no cmdongle with this id",
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "/cmdongles/{cmDongleId}/licenses": {
+      "get": {
+        "summary": "Get a list of licenses within a specific dongle or, if cmDongleId is given as \"all\", for all dongles",
+        "operationId": "getLicenses",
+        "parameters": [
+          {
+            "name": "cmDongleId",
+            "description": "the cmdongle ID or \"all\" to query all dongles",
+            "in": "path",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "the list of licenses",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/LicenseInfo"
+              }
+            }
+          },
+          "404": {
+            "description": "no cmdongle with this id",
+            "schema": {
+              "type": "string"
+            }
           }
         }
       }
     }
   },
   "definitions": {
-    "Error": {
+    "LicenseInfo": {
       "type": "object",
       "properties": {
-        "message": {
+        "product": {
           "type": "string",
-          "description": "meaningful error message"
+          "description": "the product id"
+        },
+        "count": {
+          "type": "string",
+          "description": "the count of available licenses"
         }
       }
     }
