@@ -3,11 +3,9 @@
 
 #include "easylogging++.h"
 
-#include <boost/program_options.hpp>
 #include <signal.h>
 
 using namespace std;
-using namespace boost::program_options;
 
 INITIALIZE_EASYLOGGINGPP
 

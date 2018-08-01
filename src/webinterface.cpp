@@ -4,15 +4,26 @@
 
 #include "easylogging++.h"
 
-#include <boost/regex.hpp>
 #include <sstream>
+
 
 using websocketpp::connection_hdl;
 using websocketpp::lib::placeholders::_1;
 using namespace std;
 
-WebInterface::WebInterface(int port, LicenseManagerInterface* license_manager)
-    : port_ (port), license_manager_(license_manager)
+WebInterface::WebInterface(int port, LicenseManagerInterface* license_manager):
+    port_ (port),
+    license_manager_(license_manager),
+    rxHandleGetDongles_("^GET:\\/cmdongles:$"),
+    rxHandleGetContext_("^GET:\\/cmdongles\\/([^/]+)\\/context:$"),
+    rxHandleUpdate_("^PUT:\\/cmdongles\\/([^/]+)\\/update:.*$"),
+    rxHandleGetLicenseCount_("^GET:\\/cmdongles\\/([^/]+)\\/products\\/([^/]+)\\/licensecount:$"),
+    rxHandleGetLicenses_("^GET:\\/cmdongles\\/([^/]+)\\/licenses:$"),
+    rxHandleGetDongles405_("^.*:\\/cmdongles:.*$"),
+    rxHandleGetContext405_("^.*:\\/cmdongles\\/([^/]+)\\/context:.*$"),
+    rxHandleUpdate405_("^.*:\\/cmdongles\\/([^/]+)\\/update:.*$"),
+    rxHandleGetLicenseCount405_("^.*:\\/cmdongles\\/([^/]+)\\/products\\/([^/]+)\\/licensecount:.*$"),
+    rxHandleGetLicenses405_("^.*:\\/cmdongles\\/([^/]+)\\/licenses:$")
 {
     LOG(DEBUG) << "Webinterface constructor, starting to listen on port " << port_;
 
@@ -79,27 +90,26 @@ void WebInterface::HandleHttpMessage(const string& method, const string& path, c
     LOG(DEBUG) << "HTTP Message: Method: " << method << "; Path: " << path << "; Body: '" << body << "'.";
 
     string combined = method + ":" + path + ":" + body;
-    boost::smatch what;
 
-    if (boost::regex_search(combined, what, boost::regex("^GET:\\/cmdongles:$"))) {
+    if (rxHandleGetDongles_.match(combined)) {
         HandleGetDongles(response);
-    } else if (boost::regex_search(combined, what, boost::regex("^GET:\\/cmdongles\\/([^/]+)\\/context:$"))) {
-        HandleGetContext(what[1].str(), response);
-    } else if (boost::regex_search(combined, what, boost::regex("^PUT:\\/cmdongles\\/([^/]+)\\/update:.*$"))) {
-        HandleUpdate(what[1].str(), body, response);
-    } else if (boost::regex_search(combined, what, boost::regex("^GET:\\/cmdongles\\/([^/]+)\\/products\\/([^/]+)\\/licensecount:$"))) {
-        HandleGetLicenseCount(what[1].str(), what[2].str(), response);
-    } else if (boost::regex_search(combined, what, boost::regex("^GET:\\/cmdongles\\/([^/]+)\\/licenses:$"))) {
-        HandleGetLicenses(what[1].str(), response);
-    } else if(boost::regex_search(combined, what, boost::regex("^.*:\\/cmdongles:.*$"))) {
+    } else if (rxHandleGetContext_.match(combined)) {
+        HandleGetContext(rxHandleGetContext_.extractMatch(1), response);
+    } else if (rxHandleUpdate_.match(combined)) {
+        HandleUpdate(rxHandleUpdate_.extractMatch(1), body, response);
+    } else if (rxHandleGetLicenseCount_.match(combined)) {
+        HandleGetLicenseCount(rxHandleGetLicenseCount_.extractMatch(1), rxHandleGetLicenseCount_.extractMatch(2), response);
+    } else if (rxHandleGetLicenses_.match(combined)) {
+        HandleGetLicenses(rxHandleGetLicenseCount_.extractMatch(1), response);
+    } else if(rxHandleGetDongles405_.match(combined)) {
         response.Set(405, "Wrong method for this URL");
-    } else if (boost::regex_search(combined, what, boost::regex("^.*:\\/cmdongles\\/([^/]+)\\/context:.*$"))) {
+    } else if (rxHandleGetContext405_.match(combined)) {
         response.Set(405, "Wrong method for this URL");
-    } else if (boost::regex_search(combined, what, boost::regex("^.*:\\/cmdongles\\/([^/]+)\\/update:.*$"))) {
+    } else if (rxHandleUpdate405_.match(combined)) {
         response.Set(405, "Wrong method for this URL");
-    } else if (boost::regex_search(combined, what, boost::regex("^.*:\\/cmdongles\\/([^/]+)\\/products\\/([^/]+)\\/licensecount:.*$"))) {
+    } else if (rxHandleGetLicenseCount405_.match(combined)) {
         response.Set(405, "Wrong method for this URL");
-    } else if (boost::regex_search(combined, what, boost::regex("^.*:\\/cmdongles\\/([^/]+)\\/licenses:$"))) {
+    } else if (rxHandleGetLicenses405_.match(combined)) {
         response.Set(405, "Wrong method for this URL");
     } else {
         response.Set(404, "Path could not be recognized");

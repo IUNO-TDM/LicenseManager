@@ -3,10 +3,12 @@
 
 #include "licensemanagerinterface.h"
 #include "CodeMeter.h"
+#include "regexwrapper.h"
 
 class LicenseManager: public LicenseManagerInterface {
     public:
-        virtual ~LicenseManager(){}
+        LicenseManager();
+        virtual ~LicenseManager();
 
         virtual void GetDongles(std::vector<std::string>& dongles);
         virtual void GetContext(const std::string& dongle_id, std::string& context);
@@ -16,8 +18,11 @@ class LicenseManager: public LicenseManagerInterface {
 
     private:
         static std::string GetLastErrorText();
-        static void SplitDongleId(const std::string& dongle_id, CMUSHORT& mask, CMULONG& serial);
-        static void GetLicenses(const std::string& dongle_id, std::map<unsigned long, unsigned long>& licenses, const std::string& log_prefix);
+        void SplitDongleId(const std::string& dongle_id, CMUSHORT& mask, CMULONG& serial);
+        void GetLicenses(const std::string& dongle_id, std::map<unsigned long, unsigned long>& licenses, const std::string& log_prefix);
+
+        RegexWrapper rxProductId_;
+        RegexWrapper rxSplitDongleId_;
 };
 
 #endif

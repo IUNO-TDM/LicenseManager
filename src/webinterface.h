@@ -3,10 +3,12 @@
 
 #include "websocketpp/config/asio_no_tls.hpp"
 #include "websocketpp/server.hpp"
+#include "regexwrapper.h"
 
 #include <thread>
 #include <mutex>
 #include <set>
+
 
 class LicenseManagerInterface;
 
@@ -57,6 +59,17 @@ class WebInterface{
         std::mutex connection_mutex_;
 
         LicenseManagerInterface* license_manager_ = NULL;
+
+        RegexWrapper rxHandleGetDongles_;
+        RegexWrapper rxHandleGetContext_;
+        RegexWrapper rxHandleUpdate_;
+        RegexWrapper rxHandleGetLicenseCount_;
+        RegexWrapper rxHandleGetLicenses_;
+        RegexWrapper rxHandleGetDongles405_;
+        RegexWrapper rxHandleGetContext405_;
+        RegexWrapper rxHandleUpdate405_;
+        RegexWrapper rxHandleGetLicenseCount405_;
+        RegexWrapper rxHandleGetLicenses405_;
 };
 
 #endif

@@ -20,18 +20,17 @@ INC_FLAGS = $(addprefix -I,$(INC_DIRS))
 
 ifeq ($(OS), Darwin)
 # Run MacOS commands 
-LDFLAGS := -g -L/usr/local/opt/openssl/lib -L/usr/local/Cellar/boost/1.63.0/lib/ -lcrypto -lboost_system -lboost_regex -lboost_program_options -framework IOKit -framework CoreFoundation
+LDFLAGS := -g -L/usr/local/opt/openssl/lib -lcrypto -framework IOKit -framework CoreFoundation
 INC_DIRS += /usr/local/opt/openssl/include
-INC_DIRS += /usr/local/Cellar/boost/1.63.0/include/
 else
 # check for Linux and run other commands
-LDFLAGS := -g -lcrypto -lboost_system -lboost_regex -lboost_program_options -lpthread -lwibucm
+LDFLAGS := -g -lcrypto -lpthread -lwibucm
 endif
 
 DOWNLOAD_FILES := $(shell find $(LIB_DIR) -name *.download)
 DOWNLOADED_FILES := $(DOWNLOAD_FILES:%.download=%.downloaded)
 
-CPPFLAGS ?= $(INC_FLAGS) -MMD -MP -std=c++11 -Wall -g -DELPP_THREAD_SAFE
+CPPFLAGS ?= $(INC_FLAGS) -MMD -MP -std=c++11 -Wall -g -DELPP_THREAD_SAFE -DASIO_STANDALONE
 
 %.downloaded: %.download
 	$(MKDIR_P) $(dir $<)/downloaded/$(basename $(notdir $<))/src

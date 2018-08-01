@@ -3,10 +3,18 @@
 
 #include "easylogging++.h"
 
-#include <boost/regex.hpp>
 #include <stdlib.h>
 
 using namespace std;
+
+LicenseManager::LicenseManager():
+    rxProductId_("^([0-9]{1,10})$"),
+    rxSplitDongleId_("^([0-9]{1,5})-([0-9]{1,10})$")
+{
+}
+
+LicenseManager::~LicenseManager(){
+}
 
 void LicenseManager::GetDongles(vector<string>& dongles){
     LOG(DEBUG)<< "Getting dongles.";
@@ -216,10 +224,9 @@ size_t LicenseManager::GetLicenseCount(const string& dongle_id, const string& pr
     LOG(DEBUG)<< log_prefix << "'.";
 
     bool product_id_good = false;
-    boost::smatch what;
     unsigned long long product_id_ull = 0;
-    if(boost::regex_search(product_id, what, boost::regex("^([0-9]{1,10})$"))){
-        product_id_ull = strtoull(what[1].str().c_str(), NULL, 10);
+    if(rxProductId_.match(product_id)){
+        product_id_ull = strtoull(rxProductId_.extractMatch(1).c_str(), NULL, 10);
         if(product_id_ull <= 0xffffffff){
             product_id_good = true;
         }
@@ -270,10 +277,9 @@ string LicenseManager::GetLastErrorText(){
 
 void LicenseManager::SplitDongleId(const string& dongle_id, CMUSHORT& mask, CMULONG& serial){
     bool good = false;
-    boost::smatch what;
-    if(boost::regex_search(dongle_id, what, boost::regex("^([0-9]{1,5})-([0-9]{1,10})$"))){
-        unsigned long long ullmask = strtoull(what[1].str().c_str(), NULL, 10);
-        unsigned long long ullserial = strtoull(what[2].str().c_str(), NULL, 10);
+    if(rxSplitDongleId_.match(dongle_id)){
+        unsigned long long ullmask = strtoull(rxSplitDongleId_.extractMatch(1).c_str(), NULL, 10);
+        unsigned long long ullserial = strtoull(rxSplitDongleId_.extractMatch(2).c_str(), NULL, 10);
         if((ullmask<0xffff) && (ullserial<0xffffffff)) {
             mask = ullmask;
             serial = ullserial;
