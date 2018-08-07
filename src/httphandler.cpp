@@ -46,7 +46,7 @@ void HttpHandler::HandleHttpMessage(const string& method, const string& path, co
     } else if (rxHandleGetLicenseCount_.match(combined)) {
         HandleGetLicenseCount(rxHandleGetLicenseCount_.extractMatch(1), rxHandleGetLicenseCount_.extractMatch(2), response);
     } else if (rxHandleGetLicenses_.match(combined)) {
-        HandleGetLicenses(rxHandleGetLicenseCount_.extractMatch(1), response);
+        HandleGetLicenses(rxHandleGetLicenses_.extractMatch(1), response);
     } else if(rxHandleGetDongles405_.match(combined)) {
         response.Set(405, "Wrong method for this URL");
     } else if (rxHandleGetContext405_.match(combined)) {
@@ -74,10 +74,8 @@ void HttpHandler::HandleGetDongles(HttpResponse& response){
    
     try{
         license_manager_->GetDongles(dongles);
-        LOG(DEBUG)<< "2";
         string dongles_str("[");
 
-        LOG(DEBUG)<< "3";
         for (auto i : dongles) {
             if(dongles_str != "["){
                 dongles_str += ",";
@@ -85,7 +83,6 @@ void HttpHandler::HandleGetDongles(HttpResponse& response){
             dongles_str += "\"" + i + "\"";
         }
 
-        LOG(DEBUG)<< "4";
         dongles_str+="]\n";
         response.Set(200, dongles_str);
         response.SetContentType("application/json");
