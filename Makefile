@@ -24,13 +24,13 @@ LDFLAGS := -g -L/usr/local/opt/openssl/lib -lcrypto -framework IOKit -framework 
 INC_DIRS += /usr/local/opt/openssl/include
 else
 # check for Linux and run other commands
-LDFLAGS := -g -lcrypto -lpthread -lwibucm
+LDFLAGS := -g -lcrypto -lpthread -lwibucm -lpistache
 endif
 
 DOWNLOAD_FILES := $(shell find $(LIB_DIR) -name *.download)
 DOWNLOADED_FILES := $(DOWNLOAD_FILES:%.download=%.downloaded)
 
-CPPFLAGS ?= $(INC_FLAGS) -MMD -MP -std=c++11 -Wall -g -DELPP_THREAD_SAFE -DASIO_STANDALONE
+CPPFLAGS ?= $(INC_FLAGS) -MMD -MP -std=c++11 -Wall -g -DELPP_THREAD_SAFE -Wno-unused-variable
 
 %.downloaded: %.download
 	$(MKDIR_P) $(dir $<)/downloaded/$(basename $(notdir $<))/src

@@ -38,8 +38,7 @@ int main(int argc, char* argv[]) {
     {
         int websocket_port = 11432;
 
-        LicenseManager license_manager;
-        WebInterface web_interface(websocket_port, &license_manager);
+        WebInterface web_interface(websocket_port);
 
         while(!sig_term_got){
             sleep(0xffffffff);
