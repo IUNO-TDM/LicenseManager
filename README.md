@@ -9,6 +9,12 @@ The component at the juice mixing machine, responsible for importing and managin
 4. add /CodeMeter.h/ to /LicenseManager/src/ `cp CodeMeter.h /tmp/ultimaker/tmp/LicenseManager`
 5. change into ultimaker environment `chroot ultimaker`
 6. set reachable dns servers in _/etc/resolve.conf_ e.g. `8.8.8.8`
-7. install packets required for build `apt-get update; apt-get install dropbear-scp- git g++ binutils autoconf asio-dev`
-8. clone LicenseManager fcrom github `cd /tmp; git clone https://github.com/IUNO-TDM/LicenseManager.git`
-9. compile Licensemanager `cd LicenseManager; make`
+7. clone pistache https://github.com/IUNO-TDM/pistache.git
+8. cd pistache, mkdir build, cd build
+9. cmake -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=Release ..
+10. make
+11. sudo make install
+12. clone LicenseManager from github `cd /tmp; git clone https://github.com/IUNO-TDM/LicenseManager.git`
+13. compile Licensemanager `cd LicenseManager; make`
+14. rsync to ultimaker
+15. have fun

@@ -1,19 +1,15 @@
 #include "webinterface.h"
-
-#include "licensemanagerinterface.h"
-
 #include "easylogging++.h"
 
-#include <sstream>
+#include "webinterface.h"
+#include "httphandler.h"
+#include "licensemanagerinterface.h"
 
-
-using websocketpp::connection_hdl;
-using websocketpp::lib::placeholders::_1;
 using namespace std;
+using namespace Pistache;
 
-WebInterface::WebInterface(int port, LicenseManagerInterface* license_manager):
-    port_ (port),
-    license_manager_(license_manager),
+
+WebInterface::WebInterface(int port, LicenseManagerInterface* lm):
     rxHandleGetDongles_("^GET:\\/cmdongles:$"),
     rxHandleGetContext_("^GET:\\/cmdongles\\/([^/]+)\\/context:$"),
     rxHandleUpdate_("^PUT:\\/cmdongles\\/([^/]+)\\/update:.*$"),
@@ -23,22 +19,21 @@ WebInterface::WebInterface(int port, LicenseManagerInterface* license_manager):
     rxHandleGetContext405_("^.*:\\/cmdongles\\/([^/]+)\\/context:.*$"),
     rxHandleUpdate405_("^.*:\\/cmdongles\\/([^/]+)\\/update:.*$"),
     rxHandleGetLicenseCount405_("^.*:\\/cmdongles\\/([^/]+)\\/products\\/([^/]+)\\/licensecount:.*$"),
-    rxHandleGetLicenses405_("^.*:\\/cmdongles\\/([^/]+)\\/licenses:$")
+    rxHandleGetLicenses405_("^.*:\\/cmdongles\\/([^/]+)\\/licenses:$"),
+    license_manager_(lm),
+    server_(NULL)
 {
-    LOG(DEBUG) << "Webinterface constructor, starting to listen on port " << port_;
+    LOG(DEBUG) << "Webinterface constructor, starting to listen on port " << port;
 
-    server_.set_access_channels(websocketpp::log::alevel::all);
-    server_.clear_access_channels(websocketpp::log::alevel::frame_payload);
-    server_.init_asio();
-    server_.listen(port_);
-    server_.set_open_handler(bind(&WebInterface::OnOpen,this, ::_1));
-    server_.set_close_handler(bind(&WebInterface::OnClose,this,::_1));
-    server_.set_http_handler(bind(&WebInterface::OnHttp,this,::_1));
-    server_.start_accept();
-    thread t([this] {
-                this->server_.run();
-            });
-    server_thread_ = move(t);
+    HttpHandler::SetWebInterface(this);
+
+    Address addr(Pistache::Ipv4::any(), Pistache::Port(port));
+    auto opts = Pistache::Http::Endpoint::options().threads(1);
+    server_ = new Http::Endpoint(addr);
+    server_->init(opts);
+    shared_ptr<HttpHandler> handler(new HttpHandler);
+    server_->setHandler(handler);
+    server_->serveThreaded();
 
     LOG(DEBUG) << "Webinterface constructor done successfully";
 }
@@ -46,44 +41,12 @@ WebInterface::WebInterface(int port, LicenseManagerInterface* license_manager):
 WebInterface::~WebInterface() {
     LOG(DEBUG)<< "Webinterface destructor";
 
-    server_.stop();
-    if(server_thread_.joinable()) {
-        server_thread_.join();
-    }
+    server_->shutdown();
+    delete server_;
+
+    HttpHandler::SetWebInterface(NULL);
 
     LOG(DEBUG)<< "Webinterface destructor done successfully";
-}
-
-void WebInterface::OnOpen(connection_hdl hdl) {
-    {
-        lock_guard<mutex> guard(connection_mutex_);
-        LOG(DEBUG)<< "WebInterface onOpen";
-        connections_.insert(hdl);
-    }
-}
-
-void WebInterface::OnClose(connection_hdl hdl) {
-    lock_guard<mutex> guard(connection_mutex_);
-    LOG(DEBUG)<< "WebInterface onClose";
-    connections_.erase(hdl);
-}
-
-void WebInterface::OnHttp(connection_hdl hdl) {
-    LOG(DEBUG)<< "WebInterface onHttp";
-    websocketpp::server<websocketpp::config::asio>::connection_ptr con = server_.get_con_from_hdl(hdl);
-
-    string body = con->get_request_body();
-    string uri = con->get_resource();
-    string met = con->get_request().get_method();
-
-    HttpResponse response;
-    HandleHttpMessage(met,uri,body, response);
-
-    con->set_body(response.response_message_);
-    con->set_status((websocketpp::http::status_code::value)response.response_code_);
-    if(response.content_type_ != ""){
-        con->append_header("Content-Type", response.content_type_);
-    }
 }
 
 void WebInterface::HandleHttpMessage(const string& method, const string& path, const string& body, HttpResponse& response) {
@@ -100,7 +63,7 @@ void WebInterface::HandleHttpMessage(const string& method, const string& path, c
     } else if (rxHandleGetLicenseCount_.match(combined)) {
         HandleGetLicenseCount(rxHandleGetLicenseCount_.extractMatch(1), rxHandleGetLicenseCount_.extractMatch(2), response);
     } else if (rxHandleGetLicenses_.match(combined)) {
-        HandleGetLicenses(rxHandleGetLicenseCount_.extractMatch(1), response);
+        HandleGetLicenses(rxHandleGetLicenses_.extractMatch(1), response);
     } else if(rxHandleGetDongles405_.match(combined)) {
         response.Set(405, "Wrong method for this URL");
     } else if (rxHandleGetContext405_.match(combined)) {
@@ -125,15 +88,18 @@ void WebInterface::HandleHttpMessage(const string& method, const string& path, c
 void WebInterface::HandleGetDongles(HttpResponse& response){
     LOG(DEBUG)<< "Getting dongles.";
     vector<string> dongles;
+
     try{
         license_manager_->GetDongles(dongles);
         string dongles_str("[");
+
         for (auto i : dongles) {
             if(dongles_str != "["){
                 dongles_str += ",";
             }
             dongles_str += "\"" + i + "\"";
         }
+
         dongles_str+="]\n";
         response.Set(200, dongles_str);
         response.SetContentType("application/json");
@@ -170,10 +136,10 @@ void WebInterface::HandleUpdate(const string& dongle_id, const string& rau_data,
         response.Set(404, ex.what());
         LOG(DEBUG) << "Updating dongle failed. Reason: '" << ex.what() << "'.";
     }catch(runtime_error& ex){
-		response.Set(422, ex.what());
+        response.Set(422, ex.what());
         LOG(DEBUG) << "Updating dongle failed. Reason: '" << ex.what() << "'.";
     }catch(exception& ex){
-		response.Set(500, ex.what());
+        response.Set(500, ex.what());
         LOG(DEBUG) << "Updating dongle failed. Reason: '" << ex.what() << "'.";
     }
 }
@@ -199,17 +165,17 @@ void WebInterface::HandleGetLicenses(const string& dongle_id, HttpResponse& resp
     LOG(DEBUG)<< "Getting license count for dongle '" << dongle_id << "'.";
     try{
         map<unsigned long, unsigned long> licenses;
-		license_manager_->GetLicenses(dongle_id, licenses);
-	    stringstream r;
-	    r << "[";
-	    bool is_first = true;
-	    for (auto& i : licenses){
-	    	r << (is_first?"":", ") << "{\"product\":\"" << i.first << "\", \"count\":" << i.second << "}";
-	    	is_first=false;
-	    }
-	    r << "]";
-	    response.Set(200, r.str());
-		LOG(DEBUG)<< "Licenses successfully got.";
+        license_manager_->GetLicenses(dongle_id, licenses);
+        stringstream r;
+        r << "[";
+        bool is_first = true;
+        for (auto& i : licenses){
+            r << (is_first?"":", ") << "{\"product\":\"" << i.first << "\", \"count\":" << i.second << "}";
+            is_first=false;
+        }
+        r << "]";
+        response.Set(200, r.str());
+        LOG(DEBUG)<< "Licenses successfully got.";
     }catch(invalid_argument& ex){
         response.Set(404, ex.what());
         LOG(DEBUG) << "Getting licenses failed. Reason: '" << ex.what() << "'.";

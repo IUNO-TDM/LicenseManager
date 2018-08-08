@@ -4,6 +4,7 @@
 #include "easylogging++.h"
 
 #include <stdlib.h>
+#include <stdexcept>
 
 using namespace std;
 
